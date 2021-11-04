@@ -22,7 +22,7 @@ There are just two steps:
 
 1. Install it like most rust binaries:
 
-`cargo install bhound`
+`cargo install bhound # this will install it as just 'bh'` 
 
 2. Add your credentials (replace with your own creds or whatever):
 
