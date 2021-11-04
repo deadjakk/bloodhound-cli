@@ -11,6 +11,7 @@ mod config;
 pub use config::*;
 
 #[derive(Debug,StructOpt)]
+#[structopt(name="bh",author="deadjakk",about="Pentesting workflow optimizer that works with the bloodhound NEO4J db & schema")]
 struct Opt{
     #[structopt(short,long)]
     /// mark user or list of users as owned

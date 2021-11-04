@@ -7,3 +7,9 @@ description = "bloodhound command line interface tool written in rust. created t
 homepage="https://shell.rip/bh.html"
 
 [dependencies]
+neo4rs="0.5.9"
+futures="0.3.17"
+tokio={version="*"}
+structopt="0.3.25"
+lazy_static = "1.4.0"
+regex = "1.5.4"
