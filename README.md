@@ -94,7 +94,7 @@ ADSS.SPRAWL.LOCAL
 COMP1.SPRAWL.LOCAL
 ```
 
-### Dumping User Credentials from NEO4J (-g -c)
+### Dumping User Credentials from NEO4J (-c)
 
 This snippet is probably how one might most often use this tool during the course
 of a penetration test. By adding the -c flag, the plaintext password is dumped
@@ -113,7 +113,7 @@ $ bh USER1@SPRAWL.LOCAL -c
 ### Help Output for Reference
 
 ```
-bh 0.1.0
+bh 0.1.1
 deadjakk
 Pentesting workflow optimizer that works with the bloodhound NEO4J db & schema
 
