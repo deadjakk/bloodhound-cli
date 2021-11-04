@@ -10,6 +10,7 @@ This tool does the following:
 - Stores these credentails in NEO4J, visible from the BloodHound GUI client
 - Dumps these credentials with user principal in an 'impacket-friendly format' to stdout
 - Dumps the computers to which a provided principal has access
+- Allows for batch unmarking as well, this also removes creds
 
 What this tool does not do (yet?):  
 - Show the graphs, that is best suited for the GUI, since it's graphical
@@ -38,7 +39,7 @@ EOF
 
 All commands currently take one positional argument, it can be a text file
 from which it will try to parse users in various formats, or it can be a single
-user, `bh` SHOULD figure it out...
+user, `bh` SHOULD figure it out. That said, be mindful of what you throw at it.
 
 ### Marking Owned Principals (-m)
 

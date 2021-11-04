@@ -15,7 +15,7 @@ macro_rules! dprintln {
 
 lazy_static! {
     static ref HASHCAT_FORMAT:   Regex = Regex::new(r#"([\d\w\S\\\.\-])+:([\d])+:[a-f0-9]{32}:[a-f0-9]{32}:::"#).unwrap();
-    static ref SECRETS_FORMAT:   Regex = Regex::new(r#"[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^\s(:::)]*)$"#).unwrap();
+    static ref SECRETS_FORMAT:   Regex = Regex::new(r#"[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^(\$DCC2\$)\s(:::)]*)$"#).unwrap();
     static ref USERPRINC_FORMAT: Regex = Regex::new(r#"[\d\w\S\.\-]+@[\d\w\.\-]+:([\S]*)$"#).unwrap();
     static ref JUST_USER_PRINC_FORMAT: Regex = Regex::new(r#"([\d\S\w\.\-])+@{1}([\d\w\.\-][^:\s])+$"#).unwrap();
     static ref COMPUTER_FORMAT: Regex = Regex::new(r#"^([^@:\/\[\]][\d\w\.\-]+\.)+[\d\w\.\-]+$"#).unwrap();
@@ -251,12 +251,18 @@ impl Principal {
         }
         up_s_line.remove(0);
         let pass = up_s_line.join(":");
+        let password : Option<String>;
+        if pass.contains("$DCC2$10240#"){ // ugly will change
+            password= None;
+        } else {
+            password = Some(pass);
+        }
 
         Some(Principal{
             domain:domain.to_string().to_uppercase(),
             user: user.to_uppercase(),
             ntlm:None,
-            password:Some(pass),
+            password:password,
         })
 
     }
@@ -286,11 +292,17 @@ impl Principal {
         }
         domain = some_slice.get(0).unwrap().to_string().to_uppercase();
         user = some_slice.get(1).unwrap().to_string().to_uppercase();
+        let password : Option<String>;
+        if pass.contains("$DCC2$10240#"){ // ugly, will change
+            password= None;
+        } else {
+            password = Some(pass);
+        }
         Some(Principal {
             user,
             domain,
             ntlm: None,
-            password: Some(pass),
+            password: password,
         })
     }
 

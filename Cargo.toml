@@ -1,6 +1,6 @@
 [package]
 name = "bhound"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license-file = "LICENSE.md"
 description = "bloodhound command line interface tool written in rust. created to use bloodhound + neo4j to optimize pentesting workflows and allow additional automation features such as parsing, storing, and retrieving credentials to/from the neo4j database. also allows useful information to be stored and read from the database without the need of the bloodhound gui"

@@ -18,6 +18,10 @@ struct Opt{
     markowned: bool,
 
     #[structopt(short,long)]
+    /// unmark user or list of users as owned and clear creds
+    unmarkowned: bool,
+
+    #[structopt(short,long)]
     /// dump credentials as well as the principal name (in impacket format)
     cred_dump: bool,
 
@@ -57,6 +61,22 @@ struct Opt{
     /// output file or any hashcat format file
     /// to import passwords during the owned
     principals: String,
+}
+
+/// unmarks the provided principal as owned
+async fn unmark_owned(graph: Arc<Graph>,principal :Principal) {
+     let f_query =  query("MATCH (n{name:$name}) SET n.owned=false SET n.cred = '' return n.owned ")
+             .param("name", principal.get_principal());
+   let mut result = graph.execute(
+       f_query
+       ).await.unwrap();
+   let mut worked = false;
+   if let Ok(Some(row)) = result.next().await {
+       if let Some(true) = row.get::<bool>("n.owned"){
+           worked = true;
+       }
+   } 
+   println!("unmarked {} as owned: {}",&principal,worked);
 }
 
 /// marks the provided principal as owned
@@ -116,13 +136,14 @@ async fn get_local_admins_with_creds(graph: Arc<Graph>,principal: Principal) {
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
         let mut output = String::from("");
-        let r_row = row.get::<Path>("princ").unwrap().nodes();
-        let name = r_row.last().unwrap().get::<String>("name").unwrap();
-        let cred = r_row.first().unwrap().get::<String>("cred");
-        if let Some(cred_str) = cred {
-            output = principal.format_cred(cred_str);
-        } 
-        println!("{}{}",output,name);
+        if let Some(r_row_x) = row.get::<Path>("princ"){
+            let name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
+            let cred = r_row_x.nodes().first().unwrap().get::<String>("cred");
+            if let Some(cred_str) = cred {
+                output = principal.format_cred(cred_str);
+            } 
+            println!("{}{}",output,name);
+        }
     }
     let mut result = graph.execute(
         // grouplocaladmin rights
@@ -130,12 +151,13 @@ async fn get_local_admins_with_creds(graph: Arc<Graph>,principal: Principal) {
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        let r_row = row.get::<Path>("princ").unwrap().nodes();
-        let _name = r_row.last().unwrap().get::<String>("name").unwrap();
-        let cred = r_row.first().unwrap().get::<String>("cred");
-        if let Some(cred_str) = cred {
-            principal.format_cred(cred_str);
-        } 
+        if let Some(r_row_x) = row.get::<Path>("princ"){
+            let _name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
+            let cred = r_row_x.nodes().first().unwrap().get::<String>("cred");
+            if let Some(cred_str) = cred {
+                principal.format_cred(cred_str);
+            } 
+        }
     }
 }
 
@@ -149,18 +171,20 @@ async fn get_local_admins(graph: Arc<Graph>,principal: Principal) {
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        let r_row = row.get::<Path>("princ").unwrap().nodes();
-        let name = r_row.last().unwrap().get::<String>("name").unwrap();
-        println!("{}",name);
+        if let Some(r_row_x) = row.get::<Path>("princ"){
+            let name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
+            println!("{}",name);
+        }
     }
     let mut result = graph.execute(
         query("MATCH comp=(m:User {name:$name})-[r:AdminTo]->(n:Computer) RETURN comp")
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        let r_row = row.get::<Path>("princ").unwrap().nodes();
-        let name = r_row.last().unwrap().get::<String>("name").unwrap();
-        println!("{}",name);
+        if let Some(r_row_x) = row.get::<Path>("princ"){
+            let name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
+            println!("{}",name);
+        }
     }
 }
 
@@ -182,6 +206,13 @@ async fn main() {
            let graph_rc = graph.clone();
            let handle = tokio::spawn(async move {
                mark_owned(graph_rc,principal).await;
+           }); handles.push(handle);
+       }
+   } else if args.unmarkowned {
+       for principal in principals {
+           let graph_rc = graph.clone();
+           let handle = tokio::spawn(async move {
+               unmark_owned(graph_rc,principal).await;
            }); handles.push(handle);
        }
    } else if args.getadmins {
