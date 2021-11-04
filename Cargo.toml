@@ -6,6 +6,10 @@ license-file = "LICENSE.md"
 description = "bloodhound command line interface tool written in rust. created to use bloodhound + neo4j to optimize pentesting workflows and allow additional automation features such as parsing, storing, and retrieving credentials to/from the neo4j database. also allows useful information to be stored and read from the database without the need of the bloodhound gui"
 homepage="https://shell.rip/bh.html"
 
+[[bin]]
+name = "bh"
+path = "src/main.rs"
+
 [dependencies]
 neo4rs="0.5.9"
 futures="0.3.17"
@@ -13,3 +17,4 @@ tokio={version="1.13.0"}
 structopt="0.3.25"
 lazy_static = "1.4.0"
 regex = "1.5.4"
+
