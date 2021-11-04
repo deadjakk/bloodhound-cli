@@ -62,10 +62,10 @@ struct Opt{
 /// marks the provided principal as owned
 async fn mark_owned(graph: Arc<Graph>,principal :Principal) {
      let mut f_query = query("MATCH (n{name:$name}) SET n.owned=true return n.owned ")
-         .param("name", principal.get_principal().to_owned());
+         .param("name", principal.get_principal());
        if let Some(cred) = principal.get_cred(){
            f_query =  query("MATCH (n{name:$name}) SET n.owned=true SET n.cred = $cred return n.owned ")
-             .param("name", principal.get_principal().to_owned())  
+             .param("name", principal.get_principal())  
              .param("cred",cred);
        }
    let mut result = graph.execute(
@@ -100,7 +100,7 @@ fn get_principals(provided:&str,domain: Option<String>)->Vec<Principal>{
            principals.push(princ);
        }
    }
-   return principals;
+   principals
 }
 
 /// yields the list of computers to which the provided principal has localadmin
@@ -130,12 +130,11 @@ async fn get_local_admins_with_creds(graph: Arc<Graph>,principal: Principal) {
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        let mut output = String::from("");
         let r_row = row.get::<Path>("princ").unwrap().nodes();
-        let name = r_row.last().unwrap().get::<String>("name").unwrap();
+        let _name = r_row.last().unwrap().get::<String>("name").unwrap();
         let cred = r_row.first().unwrap().get::<String>("cred");
         if let Some(cred_str) = cred {
-            output = principal.format_cred(cred_str);
+            principal.format_cred(cred_str);
         } 
     }
 }
@@ -192,11 +191,12 @@ async fn main() {
            // but seems kind of unecessary unless some automation
            // system needs that kind of speed
            let graph_rc = graph.clone();
-           if args.cred_dump {
-               get_local_admins_with_creds(graph_rc,principal).await;
-               return
-           }
            get_local_admins(graph_rc,principal).await;
+       }
+   } else if args.cred_dump {
+       for principal in principals {
+           let graph_rc = graph.clone();
+           get_local_admins_with_creds(graph_rc,principal).await;
        }
    } else {
        eprintln!("no command was provided");

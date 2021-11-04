@@ -1,11 +1,6 @@
 use crate::*;
 use crate::config::*;
-use std::error::Error;
-use std::fs::{File,read_to_string};
-use std::path;
 use std::env;
-use std::io::{Read,Write};
-
 
 #[macro_export]
 macro_rules! dprintln {
@@ -19,11 +14,11 @@ macro_rules! dprintln {
 }
 
 lazy_static! {
-    static ref hashcat_format:   Regex = Regex::new(r#"([\d\w\S\\\.\-])+:([\d])+:[a-f0-9]{32}:[a-f0-9]{32}:::"#).unwrap();
-    static ref secrets_format:   Regex = Regex::new(r#"[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^\s(:::)]*)$"#).unwrap();
-    static ref userprinc_format: Regex = Regex::new(r#"[\d\w\S\.\-]+@[\d\w\.\-]+:([\S]*)$"#).unwrap();
-    static ref just_user_princ_format: Regex = Regex::new(r#"([\d\S\w\.\-])+@{1}([\d\w\.\-][^:\s])+$"#).unwrap();
-    static ref computer_format: Regex = Regex::new(r#"^([^@:\/\[\]][\d\w\.\-]+\.)+[\d\w\.\-]+$"#).unwrap();
+    static ref HASHCAT_FORMAT:   Regex = Regex::new(r#"([\d\w\S\\\.\-])+:([\d])+:[a-f0-9]{32}:[a-f0-9]{32}:::"#).unwrap();
+    static ref SECRETS_FORMAT:   Regex = Regex::new(r#"[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^\s(:::)]*)$"#).unwrap();
+    static ref USERPRINC_FORMAT: Regex = Regex::new(r#"[\d\w\S\.\-]+@[\d\w\.\-]+:([\S]*)$"#).unwrap();
+    static ref JUST_USER_PRINC_FORMAT: Regex = Regex::new(r#"([\d\S\w\.\-])+@{1}([\d\w\.\-][^:\s])+$"#).unwrap();
+    static ref COMPUTER_FORMAT: Regex = Regex::new(r#"^([^@:\/\[\]][\d\w\.\-]+\.)+[\d\w\.\-]+$"#).unwrap();
 }
 
 #[derive(Debug)]
@@ -69,12 +64,12 @@ impl Neo4jConfig {
             return None;
         } 
         // parse the data in the existing file
-        let data = pb.to_str().map(|b| std::fs::read_to_string(b)).unwrap();
+        let data = pb.to_str().map(std::fs::read_to_string).unwrap();
         let mut user = String::new();
         let mut pass = String::new();
         let mut uri = String::new();
         for line in data.unwrap().lines(){
-            let s_line = line.trim().split("=").collect::<Vec<_>>();
+            let s_line = line.trim().split('=').collect::<Vec<_>>();
             if s_line.get(0).unwrap() == &"user"{
                 user = s_line[1..].join("=");
             } else if s_line.get(0).unwrap() == &"pass"{
@@ -117,7 +112,7 @@ impl Principal {
 
     pub fn get_impacket_format(&self)->String{
         let imp_string = format!("{}/{}",self.domain,self.user);
-        let stub = String::from("");
+        let _stub = String::from("");
         if let Some(pass) = &self.password {
             return format!("{}:{}",imp_string,pass)
         } else if let Some(hash) = &self.ntlm {
@@ -146,28 +141,28 @@ impl Principal {
 
     pub fn from(line: String,domain:&Option<String>)->Option<Self>{
         let mut princ = None;
-        if hashcat_format.is_match(&line){
+        if HASHCAT_FORMAT.is_match(&line){
             dprintln!("hashcat -> {:#?}",line);
-            let mat = hashcat_format.find(&line).unwrap();
+            let mat = HASHCAT_FORMAT.find(&line).unwrap();
             princ = Principal::parse_hashcat_line(
                 // knocking off the last three colons now
                 line.get(mat.start()..mat.end()-3).unwrap().to_string()
             );
-        } else if userprinc_format.is_match(&line){
+        } else if USERPRINC_FORMAT.is_match(&line){
             dprintln!("userprinc_format -> {:#?}",line);
-            let mat = userprinc_format.find(&line).unwrap();
+            let mat = USERPRINC_FORMAT.find(&line).unwrap();
             princ = Principal::parse_userprinc_line(
                 line.get(mat.start()..mat.end()).unwrap().to_string()
             );
-        } else if secrets_format.is_match(&line){
+        } else if SECRETS_FORMAT.is_match(&line){
             dprintln!("secrets_format -> {:#?}",line);
-            let mat = secrets_format.find(&line).unwrap();
+            let mat = SECRETS_FORMAT.find(&line).unwrap();
             princ = Principal::parse_secrets_line(
                 line.get(mat.start()..mat.end()).unwrap().to_string()
             );
-        } else if just_user_princ_format.is_match(&line){
+        } else if JUST_USER_PRINC_FORMAT.is_match(&line){
             dprintln!("just_user_princ_format -> {:#?}",line);
-            let mat = just_user_princ_format.find(&line).unwrap();
+            let mat = JUST_USER_PRINC_FORMAT.find(&line).unwrap();
             princ = Principal::parse_just_user_princ_line(
                 line.get(mat.start()..mat.end()).unwrap().to_string()
             );
@@ -186,15 +181,15 @@ impl Principal {
 
     /// parses the 'standard' hashcat format into a Principal object
     fn parse_hashcat_line(line: String)->Option<Principal>{
-        let mut domain = String::new();
-        let mut user = String::new();
+        let domain: String;
+        let user: String;
         dprintln!("parsing hashcat line: {}",line);
-        let lines = line.split(":").collect::<Vec<_>>();
+        let lines = line.split(':').collect::<Vec<_>>();
         if lines.len() != 4 {
             eprintln!("error while parsing hashcat line: {}",&line);
             return None;
         }
-        let s_one = lines.get(0).unwrap().split("\\").collect::<Vec<_>>();
+        let s_one = lines.get(0).unwrap().split('\\').collect::<Vec<_>>();
         if s_one.len() != 1  && s_one.len() != 2 {
             eprintln!("error while parsing hashcat user line from: {}",&line);
             return None;
@@ -221,7 +216,7 @@ impl Principal {
     /// parses user and domain from 'user@domain' format
     fn parse_just_user_princ_line(line: String)->Option<Principal>{
         dprintln!("parsing just_user");
-        let s_line = line.split("@").collect::<Vec<_>>();
+        let s_line = line.split('@').collect::<Vec<_>>();
         if s_line.len()!=2{
             eprintln!("error parsing just_user_princ:invalid slice len:{}",line);
             return None;
@@ -236,7 +231,7 @@ impl Principal {
     /// parses user principal lines with :passwords suffixes
     fn parse_userprinc_line(line: String)->Option<Principal>{
         dprintln!("parsing userprinc (with pass)");
-        let s_line = line.split("@").collect::<Vec<_>>();
+        let s_line = line.split('@').collect::<Vec<_>>();
         if s_line.len()<2{
             eprintln!("error parsing userprinc_line0:invalid slice len:{}",line);
             return None;
@@ -244,11 +239,11 @@ impl Principal {
 
         // parse user and domain
         let user = s_line.get(0).unwrap().to_uppercase();
-        let mut dp_s_line = s_line.get(1).unwrap().split(":").collect::<Vec<_>>();
+        let dp_s_line = s_line.get(1).unwrap().split(':').collect::<Vec<_>>();
         let domain = dp_s_line.get(0).unwrap();
 
         // parse the password out
-        let mut up_s_line = line.split(":").collect::<Vec<_>>();
+        let mut up_s_line = line.split(':').collect::<Vec<_>>();
         if up_s_line.len()<2{
             eprintln!("error parsing password from \
                       userprinc_line:invalid slice len:{}",line);
@@ -259,7 +254,7 @@ impl Principal {
 
         Some(Principal{
             domain:domain.to_string().to_uppercase(),
-            user: user.to_string().to_uppercase(),
+            user: user.to_uppercase(),
             ntlm:None,
             password:Some(pass),
         })
@@ -268,17 +263,17 @@ impl Principal {
     /// parses lines returned by LSA secrets plaintext creds
     fn parse_secrets_line(line: String)->Option<Principal>{
         dprintln!("parsing secrets");
-        let mut domain = String::new();
-        let mut user = String::new();
+        let domain: String;
+        let user: String;
 
-        let mut some_slice = line.split(":").collect::<Vec<_>>();
+        let mut some_slice = line.split(':').collect::<Vec<_>>();
         let user_domain_slice = some_slice.remove(0);
         let pass = some_slice.join(":");
-        if user_domain_slice.contains("\\") {
-            some_slice = user_domain_slice.split("\\").collect::<Vec<_>>();
+        if user_domain_slice.contains('\\') {
+            some_slice = user_domain_slice.split('\\').collect::<Vec<_>>();
             // this one... just in case impacket command gets included in output
-        } else if user_domain_slice.contains("/") {
-            some_slice = user_domain_slice.split("/").collect::<Vec<_>>(); 
+        } else if user_domain_slice.contains('/') {
+            some_slice = user_domain_slice.split('/').collect::<Vec<_>>(); 
         } else {
             eprintln!("couldn't parse user/domain from slice: {}",
                       user_domain_slice);
@@ -291,12 +286,12 @@ impl Principal {
         }
         domain = some_slice.get(0).unwrap().to_string().to_uppercase();
         user = some_slice.get(1).unwrap().to_string().to_uppercase();
-        return Some(Principal {
+        Some(Principal {
             user,
             domain,
             ntlm: None,
             password: Some(pass),
-        });
+        })
     }
 
 }

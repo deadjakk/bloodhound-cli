@@ -156,9 +156,9 @@ ARGS:
 
             user@domain.com:password
 
-            domain\user:RID:hash::: (hashcat format)
+            domain\user:RID:hash:hash::: (hashcat format)
 
-            user:RID:hash:::        (hashcat format)
+            user:RID:hash:hash:::        (hashcat format)
 
             some common output you might use here is output from secretsdump.py (secrets/sam/or ntds.dit) (hashcat
             format)
