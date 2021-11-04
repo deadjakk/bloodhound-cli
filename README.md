@@ -36,6 +36,10 @@ EOF
 
 ## Usage 
 
+All commands currently take one positional argument, it can be a text file
+from which it will try to parse users in various formats, or it can be a single
+user, `bh` SHOULD figure it out...
+
 ### Marking Owned Principals (-m)
 
 This will parse any of the following formats while ignoring invalid lines:
