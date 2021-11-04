@@ -18,7 +18,7 @@ struct Opt{
     markowned: bool,
 
     #[structopt(short,long)]
-    /// dump credentials as well as the principal name (only used with -g)
+    /// dump credentials as well as the principal name (in impacket format)
     cred_dump: bool,
 
     #[structopt(short,long)]

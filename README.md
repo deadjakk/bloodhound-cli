@@ -104,7 +104,7 @@ This is dumped in the impacket format meaning you can simply copy+paste and slap
 it in front of whatever impacket example script you please.
 
 ```
-$ bh -g USER1@SPRAWL.LOCAL -c
+$ bh USER1@SPRAWL.LOCAL -c
 -------- USER1@SPRAWL.LOCAL --------
 -hashes aad3b435b51404eeaad3b435b51404ee:6184be9146ff782ee1edaf65bb25b7a7 SPRAWL.LOCAL/USER1@ADSS.SPRAWL.LOCAL
 -hashes aad3b435b51404eeaad3b435b51404ee:6184be9146ff782ee1edaf65bb25b7a7 SPRAWL.LOCAL/USER1@COMP1.SPRAWL.LOCAL
