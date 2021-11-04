@@ -186,6 +186,8 @@ impl Principal {
 
     /// parses the 'standard' hashcat format into a Principal object
     fn parse_hashcat_line(line: String)->Option<Principal>{
+        let mut domain = String::new();
+        let mut user = String::new();
         dprintln!("parsing hashcat line: {}",line);
         let lines = line.split(":").collect::<Vec<_>>();
         if lines.len() != 4 {
@@ -193,15 +195,25 @@ impl Principal {
             return None;
         }
         let s_one = lines.get(0).unwrap().split("\\").collect::<Vec<_>>();
-        if s_one.len() != 2 {
+        if s_one.len() != 1  && s_one.len() != 2 {
             eprintln!("error while parsing hashcat user line from: {}",&line);
             return None;
         }
 
+        let opt_zer = s_one.get(0);
+        let opt_one = s_one.get(1);
+        if let Some(username) = opt_one { // contains domain\user
+            user = username.to_string();
+            domain = opt_zer.unwrap().to_string();
+        } else { // just a user
+            domain = ".".to_string();
+            user = opt_zer.unwrap().to_string();
+        }
+
         dprintln!("{:?}",lines);
         return Some(Principal {
-            domain: s_one.get(0).unwrap().to_string().to_uppercase(),
-            user: s_one.get(1).unwrap().to_string().to_uppercase(),
+            user:user.to_uppercase(),
+            domain:domain.to_uppercase(),
             password: None,
             ntlm: Some(format!("{}:{}",lines.get(2).unwrap(),lines.get(3).unwrap())),
         })
