@@ -230,7 +230,8 @@ async fn main() {
            get_local_admins_with_creds(graph_rc,principal).await;
        }
    } else {
-       eprintln!("no command was provided");
+       for p in &principals { println!("{}",p);}
+       eprintln!("no command was provided, above is what was parsed");
    }
 
    futures::future::join_all(handles).await;

@@ -310,6 +310,7 @@ impl Principal {
 
 impl std::fmt::Display for Principal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.get_principal())
+        write!(f, "{} --- {}", self.get_principal(),self.get_cred()
+               .unwrap_or("".to_string()))
     }
 }
