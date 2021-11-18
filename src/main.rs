@@ -10,8 +10,6 @@ pub use utils::*;
 mod config;
 pub use config::*;
 
-const MARK_OWNED_WIDTH: i32 = 100;
-
 #[derive(Debug,StructOpt)]
 #[structopt(name="bh",author="deadjakk",about="Pentesting workflow optimizer that works with the bloodhound NEO4J db & schema")]
 struct Opt{
