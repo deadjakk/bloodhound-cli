@@ -10,6 +10,8 @@ pub use utils::*;
 mod config;
 pub use config::*;
 
+const MARK_OWNED_WIDTH: i32 = 100;
+
 #[derive(Debug,StructOpt)]
 #[structopt(name="bh",author="deadjakk",about="Pentesting workflow optimizer that works with the bloodhound NEO4J db & schema")]
 struct Opt{
@@ -72,11 +74,11 @@ async fn unmark_owned(graph: Arc<Graph>,principal :Principal) {
        ).await.unwrap();
    let mut worked = false;
    if let Ok(Some(row)) = result.next().await {
-       if let Some(true) = row.get::<bool>("n.owned"){
+       if let Some(false) = row.get::<bool>("n.owned"){
            worked = true;
        }
    } 
-   println!("unmarked {} as owned: {}",&principal,worked);
+   println!("{} unmarked: {}",&principal,worked);
 }
 
 /// marks the provided principal as owned
@@ -97,7 +99,8 @@ async fn mark_owned(graph: Arc<Graph>,principal :Principal) {
            worked = true;
        }
    } 
-   println!("marked {} as owned: {}",&principal,worked);
+
+   println!("{}{}{}",&principal," ",worked);
 }
 
 /// determines if the provided principals argument was supposed to represent

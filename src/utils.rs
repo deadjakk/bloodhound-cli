@@ -2,6 +2,8 @@ use crate::*;
 use crate::config::*;
 use std::env;
 
+const PRINCIPAL_DISPLAY_WIDTH: usize = 33;
+
 #[macro_export]
 macro_rules! dprintln {
     () => ($crate::print!("\n"));
@@ -310,7 +312,18 @@ impl Principal {
 
 impl std::fmt::Display for Principal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} --- {}", self.get_principal(),self.get_cred()
+
+        let mut space = String::from(" ");
+        let mut space_delta=1;
+        if PRINCIPAL_DISPLAY_WIDTH > self.get_principal().len() {
+            space_delta = PRINCIPAL_DISPLAY_WIDTH-self.get_principal().len()
+        }
+
+        for _ in 0..(space_delta){
+            space.push(' ');
+        }
+
+        write!(f, "{}{}{}", self.get_principal(),space,self.get_cred()
                .unwrap_or("".to_string()))
     }
 }
