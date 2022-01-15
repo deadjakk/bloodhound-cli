@@ -16,11 +16,12 @@ macro_rules! dprintln {
 }
 
 lazy_static! {
-    static ref HASHCAT_FORMAT:   Regex = Regex::new(r#"([\d\w\S\\\.\-])+:([\d])+:[a-f0-9]{32}:[a-f0-9]{32}:::"#).unwrap();
-    static ref SECRETS_FORMAT:   Regex = Regex::new(r#"[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^(\$DCC2\$)\s(:::)]*)$"#).unwrap();
-    static ref USERPRINC_FORMAT: Regex = Regex::new(r#"[\d\w\S\.\-]+@[\d\w\.\-]+:([\S]*)$"#).unwrap();
-    static ref JUST_USER_PRINC_FORMAT: Regex = Regex::new(r#"([\d\S\w\.\-])+@{1}([\d\w\.\-][^:\s])+$"#).unwrap();
-    static ref COMPUTER_FORMAT: Regex = Regex::new(r#"^([^@:\/\[\]][\d\w\.\-]+\.)+[\d\w\.\-]+$"#).unwrap();
+    static ref HASHCAT_FORMAT:   Regex = Regex::new(r#"^([\d\w\S\\\.\-])+:([\d])+:[a-f0-9]{32}:[a-f0-9]{32}:::"#).unwrap();
+    static ref SECRETS_FORMAT:   Regex = Regex::new(r#"^[\d\w\S\.\-]+[/|\\][\d\w\.\-]+:([^(\$DCC2\$)\s(:::)]).+$"#).unwrap();
+    //static ref USERPRINC_FORMAT: Regex = Regex::new(r#"[\d\w\S\.\-]+@[\d\w\.\-]+:([\S]*)$"#).unwrap();
+    static ref USERPRINC_FORMAT: Regex = Regex::new(r#"^[\d\w\S\.\-]+@{1}[\d\w\.\-]+:.*$"#).unwrap();
+    static ref JUST_USER_PRINC_FORMAT: Regex = Regex::new(r#"^([\w\d\.\-]+@{1}[\w\d\s\.\-][^:\t\r\n]+)$"#).unwrap();
+    static ref COMPUTER_FORMAT: Regex = Regex::new(r#"^([^\r\t\n@:][\d\w\.\-]+[\\//]{1}[\d\w\.\-]+)$"#).unwrap();
 }
 
 #[derive(Debug)]
@@ -150,6 +151,7 @@ impl Principal {
                 // knocking off the last three colons now
                 line.get(mat.start()..mat.end()-3).unwrap().to_string()
             );
+        // USER@DOMAIN:PASSWORD 
         } else if USERPRINC_FORMAT.is_match(&line){
             dprintln!("userprinc_format -> {:#?}",line);
             let mat = USERPRINC_FORMAT.find(&line).unwrap();
@@ -162,10 +164,16 @@ impl Principal {
             princ = Principal::parse_secrets_line(
                 line.get(mat.start()..mat.end()).unwrap().to_string()
             );
+        // USER@DOMAIN
         } else if JUST_USER_PRINC_FORMAT.is_match(&line){
             dprintln!("just_user_princ_format -> {:#?}",line);
             let mat = JUST_USER_PRINC_FORMAT.find(&line).unwrap();
             princ = Principal::parse_just_user_princ_line(
+                line.get(mat.start()..mat.end()).unwrap().to_string()
+            );
+        } else if COMPUTER_FORMAT.is_match(&line){
+            let mat = COMPUTER_FORMAT.find(&line).unwrap();
+            princ = Principal::parse_computer_line(
                 line.get(mat.start()..mat.end()).unwrap().to_string()
             );
         }
@@ -179,6 +187,34 @@ impl Principal {
         }
 
         None
+    }
+
+    /// parses the 'computer' format into a Principal object
+    /// examples: domain\username domain/username domain.com/username domain.com\username
+    fn parse_computer_line(line: String)->Option<Principal>{
+        let domain: String;
+        let user: String;
+        dprintln!("parsing computer line: {}",line);
+        let mut lines = line.split('\\').collect::<Vec<_>>();
+
+        // check for the other slash
+        if lines.len() != 2 {
+            lines = line.split('/').collect::<Vec<_>>();
+        }
+
+        let tok_zer = lines.get(0); // domain 
+        let tok_one = lines.get(1); // user 
+        if let Some(username) = tok_one { // contains domain\user
+            user = username.to_string();
+            domain = tok_zer.unwrap().to_string(); 
+            return Some(Principal {
+                user:user.to_uppercase(),
+                domain:domain.to_uppercase(),
+                password: None,
+                ntlm: None,
+            })
+        } 
+        return None
     }
 
     /// parses the 'standard' hashcat format into a Principal object
