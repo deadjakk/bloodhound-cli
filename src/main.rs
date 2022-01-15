@@ -152,12 +152,14 @@ async fn get_local_admins_with_creds(graph: Arc<Graph>,principal: Principal) {
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        if let Some(r_row_x) = row.get::<Path>("princ"){
-            let _name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
+        let mut output = String::from("");
+        if let Some(r_row_x) = row.get::<Path>("comp"){
+            let name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
             let cred = r_row_x.nodes().first().unwrap().get::<String>("cred");
             if let Some(cred_str) = cred {
-                principal.format_cred(cred_str);
+                output=principal.format_cred(cred_str);
             } 
+            println!("{}{}",output,name);
         }
     }
 }
@@ -182,7 +184,7 @@ async fn get_local_admins(graph: Arc<Graph>,principal: Principal) {
         .param("name", principal.get_principal().to_owned())  
         ).await.unwrap();
     while let Ok(Some(row)) = result.next().await {
-        if let Some(r_row_x) = row.get::<Path>("princ"){
+        if let Some(r_row_x) = row.get::<Path>("comp"){
             let name = r_row_x.nodes().last().unwrap().get::<String>("name").unwrap();
             println!("{}",name);
         }
